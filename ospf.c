@@ -34,7 +34,7 @@
 #include <netinet/ether.h>
 #include <netinet/in.h>
 #include <netinet/in_systm.h>
- #include "netstructs.h"
+#include "netstructs.h"
 
 #define BUFFER_LEN 1518
 
@@ -63,13 +63,80 @@ unsigned short in_cksum(unsigned short *addr, int len)
   return (answer);
 }
 
+void make_ip(IpHeader* frame_ip)
+{
+  frame_ip->VersionIhl = 0x4;
+  frame_ip->DscpEcn = 0x00;
+  frame_ip->Length = 0x14;
+  frame_ip->Id = 0x01;
+  frame_ip->FlagsOffset = 0x00;
+  frame_ip->Ttl = 0x80;
+  frame_ip->Protocol = 0x11;
+  frame_ip->Checksum = 0x00;
+  frame_ip->Source = 0x00;
+  frame_ip->Destination = 0xFFFFFFFF;
+}
+
+void make_ethernet(EthernetHeader* frame_ethernet)
+{
+  frame_ethernet->Destination[0] = 0xFF;
+  frame_ethernet->Destination[1] = 0xFF;
+  frame_ethernet->Destination[2] = 0xFF;
+  frame_ethernet->Destination[3] = 0xFF;
+  frame_ethernet->Destination[4] = 0xFF;
+  frame_ethernet->Destination[5] = 0xFF;
+  frame_ethernet->Source[0] = 0x00;
+  frame_ethernet->Source[1] = 0x00;
+  frame_ethernet->Source[2] = 0x00;
+  frame_ethernet->Source[3] = 0x00;
+  frame_ethernet->Source[4] = 0x00;
+  frame_ethernet->Source[5] = 0x01;
+  frame_ethernet->Type = 0x0800;
+}
+
+void ResponderPacoteHello(OspfHeader* frame, unsigned char* buffer){
+
+  int sock, i;
+  struct ifreq ifr;
+  struct sockaddr_ll to;
+  socklen_t len;
+  unsigned char addr[6];
+  memset(&ifr, 0, sizeof(ifr));
+
+  if((sock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0){
+    printf("Erro na criacao do socket.\n");
+    exit(1);
+  }
+  
+  to.sll_protocol= htons(ETH_P_ALL);
+  to.sll_ifindex = 1;
+  
+  // Montar buffer e responder pacote 
+
+  sendto(sock, (char *) buffer, sizeof(buffer), 0, (struct sockaddr*) &to,len);
+  printf("Respondi o pacote hello\n");
+}
+
 void stat_ip(IpHeader* frame, unsigned char* buffer, EthernetHeader* frame_ethernet)
 {
-
-  printf("%d\n", frame->Protocol);
-
   if(frame->Protocol == 89) {
-    printf("Protocolo ospf; Se for um hello responder com um hello e estabelecer o roteamento; depois enviar os dados pro router\n");
+
+    OspfHeader* ospf = (OspfHeader*)(buffer + 20);
+
+    if(ospf->type == 1) {
+      // Hello packet - Responder o pacote hello
+      printf("Tentando responder pacote hello\n");
+      ResponderPacoteHello(ospf, buffer);
+    }
+
+    /*printf("Version: %d\n",ospf->version );
+    printf("Type: %d\n",ospf->type );
+    printf("Source: %x\n",ospf->source );
+    printf("Len: %d\n",ospf->len );
+    printf("Area_id: %d\n",ospf->area_id );
+    printf("Chksum: %x\n",ospf->chksum );
+    printf("Auth_type: %d\n",ospf->auth_type );
+    printf("------------------------\n");*/
   }
   
 }

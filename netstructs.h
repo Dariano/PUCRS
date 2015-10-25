@@ -1,3 +1,5 @@
+#define MAX_SIMPLE_AUTH_LEN	8
+
 typedef uint8_t MacAddress[6];
 typedef struct
 {
@@ -72,3 +74,28 @@ char sname[64];
 char file[128];
 uint8_t options[512];
 } __attribute__((packed)) DhcpHeader;
+
+/* OSPF header */
+typedef struct crypt
+{
+    u_int16_t		dummy;
+    u_int8_t		keyid;
+    u_int8_t		len;
+    u_int32_t		seq_num;
+} __attribute__((packed)) crypt;
+
+typedef struct
+{
+    u_int8_t		version;
+    u_int8_t		type;
+    u_int16_t		len;
+    u_int32_t		source;
+    u_int32_t		area_id;
+    u_int16_t		chksum;
+    u_int16_t		auth_type;
+    union
+    {
+        char		simple[MAX_SIMPLE_AUTH_LEN];
+        struct crypt	crypt;
+    } auth_key;
+}__attribute__((packed)) OspfHeader;
