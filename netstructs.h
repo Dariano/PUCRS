@@ -92,10 +92,6 @@ typedef struct
     u_int32_t		source;
     u_int32_t		area_id;
     u_int16_t		chksum;
-    u_int16_t		auth_type;
-    union
-    {
-        char		simple[MAX_SIMPLE_AUTH_LEN];
-        struct crypt	crypt;
-    } auth_key;
+    u_int16_t       auth_type;
+    u_int64_t       auth_key;
 }__attribute__((packed)) OspfHeader;
